@@ -8,15 +8,16 @@ import re
 import numpy as np
 from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier 
+#from sklearn.ensemble import AdaBoostClassifier
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 from sklearn.model_selection import GridSearchCV
 
 
-
 def load_data(database_filepath):
+    """ load data from sqlitd db """
     engine = create_engine('sqlite:///'+ database_filepath)
     df = pd.read_sql_table(table_name=engine.table_names()[0],con='sqlite:///'+database_filepath)
     X = df['message'].values
@@ -25,6 +26,9 @@ def load_data(database_filepath):
 
 
 def tokenize(text):
+    """ exchange url with url placeholder, lemmatizing and tokenizing the input(text)"""
+    
+             
     url_regex = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
     detected_urls = re.findall(url_regex, text)
     for url in detected_urls:
@@ -42,13 +46,17 @@ def tokenize(text):
 
 
 def build_model():
+    """
+    the pipeline take in the 'message' column as input and output classification result
+    use dSearch to find better parameters to tune the model.
+    """
     pipeline = Pipeline([
         ('vect', CountVectorizer(tokenizer=tokenize)),
         ('tfidf', TfidfTransformer()),
         ('clf', MultiOutputClassifier(RandomForestClassifier()))
     ])
     max_features = ['auto', 'sqrt']
-    max_depth = [int(x) for x in np.linspace(10, 110, num = 11)]
+    max_depth = [int(x) for x in np.linspace(10, 100, num = 4)] 
     max_depth.append(None)
     min_samples_split = [2, 5, 10]
     min_samples_leaf = [1, 2, 4]
@@ -66,13 +74,23 @@ def build_model():
 
 
 def evaluate_model(model, X_test, Y_test, category_names):
-    y_pred = model.predict(X_test)
+    """Report the overall accuracy and a classification report for each output category of the dataset. 
+       parameters : model,X_test,Y_test, category_names
+       output: print classification_report
+        classification reports: 'precision','recall','f1-score', 'support'
+       """
+    y_pred = model.predict(X_test)  
     for i in range(len(Y_test)):
-        print(classification_report(y_pred=y_pred[:,i],y_true=y_test[:,i]))
+        print(classification_report(y_pred=y_pred[:,i],y_true=Y_test[:,i]))
     
 
 
 def save_model(model, model_filepath):
+    """
+     Export our model as a pickle file
+     parameters: model, model_filepath
+    
+     """
     pickle.dump(model, open(model_filepath, 'wb'))
 
 
@@ -81,6 +99,7 @@ def main():
         database_filepath, model_filepath = sys.argv[1:]
         print('Loading data...\n    DATABASE: {}'.format(database_filepath))
         X, Y, category_names = load_data(database_filepath)
+        """ split data into train and test datasets
         X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
         
         print('Building model...')

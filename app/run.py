@@ -8,7 +8,8 @@ from nltk.tokenize import word_tokenize
 from flask import Flask
 from flask import render_template, request, jsonify
 from plotly.graph_objs import Bar
-from sklearn.externals import joblib
+#from sklearn.externals import joblib
+import joblib
 from sqlalchemy import create_engine
 
 
@@ -42,10 +43,19 @@ def index():
     # TODO: Below is an example - modify to extract data for your own visuals
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
+
+    cat = df.drop(columns = ['id', 'message', 'original', 'genre'])
+    l_cats = cat.columns.values
+    l_counts = cat.sum().values
+
+    rsums = cat.sum(axis=1)
+    ml_counts = rsums.value_counts().sort_index()
+    ml, ml_counts = ml_counts.index, ml_counts.values
     
     # create visuals
     # TODO: Below is an example - modify to create your own visuals
     graphs = [
+
         {
             'data': [
                 Bar(
@@ -63,7 +73,48 @@ def index():
                     'title': "Genre"
                 }
             }
-        }
+        },
+
+      {
+            'data': [
+                Bar(
+                    x=l_cats,
+                    y=l_counts,
+                    marker_color='salmon'
+                )
+            ],
+
+            'layout': {
+                'title': 'Distributions of Message Labels',
+                'yaxis': {
+                    'title': "Counts"
+                },
+                'xaxis': {
+                    'title': "Message Labels"
+                }
+            }
+        },
+    {
+     'data': [
+                Bar(
+                    x=ml,
+                    y=ml_counts,
+                    marker_color='red'
+                )
+            ],
+
+            'layout': {
+                'title': 'labels for each messages',
+                'yaxis': {
+                    'title': "Numbers of Messages"
+                },
+                'xaxis': {
+                    'title': "Numbers of labels"
+                }
+            }
+
+    }
+
     ]
     
     # encode plotly graphs in JSON
@@ -93,7 +144,7 @@ def go():
 
 
 def main():
-    app.run(host='0.0.0.0', port=3001, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=False)
 
 
 if __name__ == '__main__':

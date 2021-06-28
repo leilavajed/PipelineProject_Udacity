@@ -3,6 +3,12 @@ import pandas as pd
 import sqlalchemy
 
 def load_data(messages_filepath, categories_filepath):
+    
+    """
+    load the messages and categories datasets and merge them them together.
+    Returns:
+    a df : merged datasets.
+    """
     messages = pd.read_csv(messages_filepath)
     categories = pd.read_csv(categories_filepath)
     return pd.merge(messages,categories,on='id')
@@ -13,6 +19,14 @@ def is_notone(inputs):
     else:
         return inputs
 def clean_data(df):
+    """
+    cleans dataset and extracts classification categories.
+    parameters:
+        df: dataset containing messages and categories
+    Returns:
+        df: cleaned dataset
+    """    
+        
     categories = df['categories'].str.split(";",expand=True,)
     row = categories.iloc[0]
     category_colnames = row.apply(lambda x:x.split('-')[0])
@@ -26,8 +40,9 @@ def clean_data(df):
 
 
 def save_data(df, database_filename):
+    """ save the clean dataset into an sqlite database in the provided path """
     engine = sqlalchemy.create_engine('sqlite:///'+database_filename)
-    df.to_sql('Insert_to_Table', engine, index=False, if_exists='replace')
+    df.to_sql('InsertTableName', engine, index=False, if_exists='replace')
 
 
 def main():
