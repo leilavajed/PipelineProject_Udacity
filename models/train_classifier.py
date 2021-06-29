@@ -80,7 +80,7 @@ def evaluate_model(model, X_test, Y_test, category_names):
         classification reports: 'precision','recall','f1-score', 'support'
        """
     y_pred = model.predict(X_test)  
-    for i in range(len(Y_test)):
+    for i in range(36):
         print(classification_report(y_pred=y_pred[:,i],y_true=Y_test[:,i]))
     
 
